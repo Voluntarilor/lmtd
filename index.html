@@ -4,8 +4,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>LMTD Calculator</title>
-    <meta name="theme-color" content="#ffffff">
-    <meta name="description" content="Калькулятор LMTD с графиками">
     <style>
       body { font-family: system-ui, -apple-system, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
       .block { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; }
@@ -21,7 +19,6 @@
   <body>
     <h1>LMTD Calculator</h1>
 
-    <!-- Блок 1 -->
     <div class="block">
       <h3>Режим 1</h3>
       <div class="row">
@@ -56,7 +53,6 @@
       <canvas id="chart1"></canvas>
     </div>
 
-    <!-- Блок 2 -->
     <div class="block">
       <h3>Режим 2</h3>
       <div class="row">
@@ -118,62 +114,136 @@
         }
 
         if (dT1 <= 0 || dT2 <= 0) {
-          resultEl.textContent = 'Проверьте корректность температур';
+          resultEl.textContent = 'Проверьте корректность температур (дельты должны быть > 0)';
           return;
         }
 
         let lmtd;
         let method = '';
 
-        // Если дельты равны — LMTD = dT (предел логарифма)
         if (Math.abs(dT1 - dT2) < 0.0001) {
           lmtd = dT1;
-          method = 'ΔT₁ = ΔT₂, LMTD = ΔT';
-        }
-        // Если соотношение дельт ≤ 2 — среднеарифметическое
-        else if (dT1 / dT2 <= 2 || dT2 / dT1 <= 2) {
+          method = 'ΔT₁ ≈ ΔT₂, LMTD = ΔT';
+        } else if (dT1 / dT2 <= 2 || dT2 / dT1 <= 2) {
           lmtd = (dT1 + dT2) / 2;
           method = 'среднеарифметическое (ΔT₁/ΔT₂ ≤ 2)';
-        }
-        // Иначе — точная формула
-        else {
+        } else {
           lmtd = (dT1 - dT2) / Math.log(dT1 / dT2);
           method = 'точная формула';
         }
 
-        resultEl.textContent = `LMTD = ${lmtd.toFixed(2)} °C (${flowType === 'counter' ? 'противоток' : 'прямоток'}, ${method})`;
+        resultEl.textContent = `LMTD = ${lmtd.toFixed(2)} °C (${flowType === 'counter' ? 'противоток' : 'прямоток'}, \${method})`;
 
         drawChart(canvas, t1, t2, t3, t4, flowType);
       }
 
       function drawChart(canvas, t1, t2, t3, t4, flowType) {
         const ctx = canvas.getContext('2d');
-        new Chart(ctx, {
+
+        // Для стрелок используем аннотации — Chart.js не умеет рисовать стрелки на линиях,
+        // поэтому рисуем их вручную поверх графика
+        const drawArrow = (ctx, fromX, fromY, toX, toY, color, size = 10) => {
+          const angle = Math.atan2(toY - fromY, toX - fromX);
+          ctx.beginPath();
+          ctx.moveTo(fromX, fromY);
+          ctx.lineTo(toX, toY);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          // Стрелка
+          const arrowLength = size;
+          const dx = Math.cos(angle - Math.PI / 6) * arrowLength;
+          const dy = Math.sin(angle - Math.PI / 6) * arrowLength;
+          const dx2 = Math.cos(angle + Math.PI / 6) * arrowLength;
+          const dy2 = Math.sin(angle + Math.PI / 6) * arrowLength;
+
+          ctx.beginPath();
+          ctx.moveTo(toX, toY);
+          ctx.lineTo(toX + dx, toY + dy);
+          ctx.lineTo(toX + dx2, toY + dy2);
+          ctx.fillStyle = color;
+          ctx.fill();
+        };
+
+        // Промежуточные точки для более точного отображения (линейная интерполяция)
+        const midHot = (t1 + t2) / 2;
+        const midCold = (t3 + t4) / 2;
+
+        let hotData, coldData;
+        if (flowType === 'counter') {
+          // Противоток: горячая — слева направо, холодная — справа налево
+          hotData = [t1, midHot, t2];
+          coldData = [t4, midCold, t3];
+        } else {
+          // Прямоток: обе слева направо
+          hotData = [t1, midHot, t2];
+          coldData = [t3, midCold, t4];
+        }
+
+        const chart = new Chart(ctx, {
           type: 'line',
           data: {
-            labels: ['Начало', 'Конец'],
+            labels: ['Вход', 'Середина', 'Выход'],
             datasets: [
               {
                 label: 'Горячая среда',
-                data: flowType === 'counter' ? [t1, t2] : [t1, t2],
+                data: hotData,
                 borderColor: 'red',
-                tension: 0.4
+                tension: 0.4,
+                fill: false,
+                pointRadius: 4,
+                pointBackgroundColor: 'white',
+                pointBorderColor: 'red',
+                pointBorderWidth: 2
               },
               {
                 label: 'Холодная среда',
-                data: flowType === 'counter' ? [t4, t3] : [t3, t4],
+                data: coldData,
                 borderColor: 'blue',
-                tension: 0.4
+                tension: 0.4,
+                fill: false,
+                pointRadius: 4,
+                pointBackgroundColor: 'white',
+                pointBorderColor: 'blue',
+                pointBorderWidth: 2
               }
             ]
           },
           options: {
             responsive: true,
+            maintainAspectRatio: false,
             scales: {
-              y: { beginAtZero: false }
+              y: { beginAtZero: false, grid: { color: '#e0e0e0' } },
+              x: { grid: { display: false } }
             },
             plugins: {
-              legend: { position: 'top' }
+              legend: { position: 'top' },
+              tooltip: { mode: 'index', intersect: false }
+            },
+            onComplete: function() {
+              // Рисуем стрелки поверх графика
+              const width = canvas.width;
+              const height = canvas.height;
+              const xScale = this.scales['x'];
+              const yScale = this.scales['y'];
+
+              const getX = (label) => xScale.getPixelForValue(label);
+              const getY = (value) => yScale.getPixelForValue(value);
+
+              // Стрелки для горячей среды
+              const hStartX = getX('Вход');
+              const hStartY = getY(hotData);
+              const hEndX = getX('Выход');
+              const hEndY = getY(hotData);
+              drawArrow(ctx, hStartX, hStartY, hEndX, hEndY, 'red', 12);
+
+              // Стрелки для холодной среды
+              const cStartX = getX('Вход');
+              const cStartY = getY(coldData);
+              const cEndX = getX('Выход');
+              const cEndY = getY(coldData);
+              drawArrow(ctx, cStartX, cStartY, cEndX, cEndY, 'blue', 12);
             }
           }
         });
