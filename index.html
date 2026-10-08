@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LMTD Calculator</title>
+    <meta name="theme-color" content="#ffffff">
+    <meta name="description" content="Калькулятор LMTD с графиками">
+    <style>
+      body { font-family: system-ui, -apple-system, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+      .block { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; }
+      .row { display: flex; gap: 1rem; flex-wrap: wrap; }
+      .col { flex: 1; min-width: 200px; }
+      label { display: block; margin-top: 0.5rem; font-weight: 500; }
+      input, select { padding: 0.75rem; width: 100%; box-sizing: border-box; margin-bottom: 0.5rem; }
+      button { background: #000; color: #fff; border: none; padding: 0.75rem 1rem; cursor: pointer; width: 100%; }
+      .result { margin-top: 1rem; font-weight: bold; }
+      canvas { width: 100%; height: 300px; border: 1px solid #ddd; background: #fafafa; }
+    </style>
+  </head>
+  <body>
+    <h1>LMTD Calculator</h1>
+
+    <!-- Блок 1 -->
+    <div class="block">
+      <h3>Режим 1</h3>
+      <div class="row">
+        <div class="col">
+          <label>Тип потока</label>
+          <select id="flowType1">
+            <option value="counter">Противоток</option>
+            <option value="parallel">Прямоток</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <label>T1 (вход горячей, °C)</label>
+          <input type="number" id="t1_1" placeholder="90">
+        </div>
+        <div class="col">
+          <label>T2 (выход горячей, °C)</label>
+          <input type="number" id="t2_1" placeholder="60">
+        </div>
+        <div class="col">
+          <label>T3 (вход холодной, °C)</label>
+          <input type="number" id="t3_1" placeholder="30">
+        </div>
+        <div class="col">
+          <label>T4 (выход холодной, °C)</label>
+          <input type="number" id="t4_1" placeholder="50">
+        </div>
+      </div>
+      <button onclick="calculate(1)">Рассчитать LMTD</button>
+      <div class="result" id="result1"></div>
+      <canvas id="chart1"></canvas>
+    </div>
+
+    <!-- Блок 2 -->
+    <div class="block">
+      <h3>Режим 2</h3>
+      <div class="row">
+        <div class="col">
+          <label>Тип потока</label>
+          <select id="flowType2">
+            <option value="counter">Противоток</option>
+            <option value="parallel">Прямоток</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <label>T1 (вход горячей, °C)</label>
+          <input type="number" id="t1_2" placeholder="85">
+        </div>
+        <div class="col">
+          <label>T2 (выход горячей, °C)</label>
+          <input type="number" id="t2_2" placeholder="55">
+        </div>
+        <div class="col">
+          <label>T3 (вход холодной, °C)</label>
+          <input type="number" id="t3_2" placeholder="35">
+        </div>
+        <div class="col">
+          <label>T4 (выход холодной, °C)</label>
+          <input type="number" id="t4_2" placeholder="55">
+        </div>
+      </div>
+      <button onclick="calculate(2)">Рассчитать LMTD</button>
+      <div class="result" id="result2"></div>
+      <canvas id="chart2"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      function calculate(mode) {
+        const prefix = mode === 1 ? '1' : '2';
+        const t1 = parseFloat(document.getElementById('t1_' + prefix).value);
+        const t2 = parseFloat(document.getElementById('t2_' + prefix).value);
+        const t3 = parseFloat(document.getElementById('t3_' + prefix).value);
+        const t4 = parseFloat(document.getElementById('t4_' + prefix).value);
+        const flowType = document.getElementById('flowType' + prefix).value;
+        const resultEl = document.getElementById('result' + prefix);
+        const canvas = document.getElementById('chart' + prefix);
+
+        if (isNaN(t1) || isNaN(t2) || isNaN(t3) || isNaN(t4)) {
+          resultEl.textContent = 'Введите все значения';
+          return;
+        }
+
+        let dT1, dT2;
+        if (flowType === 'counter') {
+          dT1 = t1 - t4;
+          dT2 = t2 - t3;
+        } else {
+          dT1 = t1 - t3;
+          dT2 = t2 - t4;
+        }
+
+        if (dT1 <= 0 || dT2 <= 0) {
+          resultEl.textContent = 'Проверьте корректность температур';
+          return;
+        }
+
+        const lmtd = (dT1 - dT2) / Math.log(dT1 / dT2);
+        resultEl.textContent = `LMTD = ${lmtd.toFixed(2)} °C (${flowType === 'counter' ? 'противоток' : 'прямоток'})`;
+
+        drawChart(canvas, t1, t2, t3, t4, flowType);
+      }
+
+      function drawChart(canvas, t1, t2, t3, t4, flowType) {
+        const ctx = canvas.getContext('2d');
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: ['Начало', 'Конец'],
+            datasets: [
+              {
+                label: 'Горячая среда',
+                data: flowType === 'counter' ? [t1, t2] : [t1, t2],
+                borderColor: 'red',
+                tension: 0.4
+              },
+              {
+                label: 'Холодная среда',
+                data: flowType === 'counter' ? [t4, t3] : [t3, t4],
+                borderColor: 'blue',
+                tension: 0.4
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: { beginAtZero: false }
+            },
+            plugins: {
+              legend: { position: 'top' }
+            }
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
