@@ -1,253 +1,113 @@
 <!DOCTYPE html>
 <html lang="ru">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>LMTD Calculator</title>
+<head>
+    <meta charset="UTF-8">
+    <title>LMTD Calculator - Minimal</title>
     <style>
-      body { font-family: system-ui, -apple-system, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
-      .block { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; }
-      .row { display: flex; gap: 1rem; flex-wrap: wrap; }
-      .col { flex: 1; min-width: 200px; }
-      label { display: block; margin-top: 0.5rem; font-weight: 500; }
-      input, select { padding: 0.75rem; width: 100%; box-sizing: border-box; margin-bottom: 0.5rem; }
-      button { background: #000; color: #fff; border: none; padding: 0.75rem 1rem; cursor: pointer; width: 100%; }
-      .result { margin-top: 1rem; font-weight: bold; }
-      canvas { width: 100%; height: 300px; border: 1px solid #ddd; background: #fafafa; }
+        body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .card { background: #f9f9f9; padding: 12px; border-radius: 6px; border: 1px solid #eee; }
+        .row { display: flex; gap: 10px; margin-bottom: 8px; }
+        .col { flex: 1; }
+        label { display: block; font-size: 11px; color: #666; margin-bottom: 4px; text-transform: uppercase; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #000; color: #fff; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; margin-top: 10px; }
+        button:hover { background: #333; }
+        .result { font-size: 18px; font-weight: bold; color: #007bff; margin: 15px 0; padding: 10px; background: #eef7ff; border-left: 4px solid #007bff; }
+        .chart-wrapper { width: 100%; height: 350px; background: #fff; border: 1px solid #ddd; border-radius: 6px; margin-top: 20px; }
     </style>
-  </head>
-  <body>
-    <h1>LMTD Calculator</h1>
-
-    <div class="block">
-      <h3>Режим 1</h3>
-      <div class="row">
-        <div class="col">
-          <label>Тип потока</label>
-          <select id="flowType1">
-            <option value="counter">Противоток</option>
-            <option value="parallel">Прямоток</option>
-          </select>
+</head>
+<body>
+<div class="container">
+    <h2>Калькулятор LMTD</h2>
+    <div class="grid">
+        <div class="card">
+            <h4>Горячая среда</h4>
+            <div class="row"><div class="col"><label>T1 (вход)</label><input type="number" id="T1" value="70"></div>
+            <div class="col"><label>T2 (выход)</label><input type="number" id="T2" value="50"></div></div>
         </div>
-      </div>
-      <div class="row">
-        <div class="col">
-          <label>T1 (вход горячей, °C)</label>
-          <input type="number" id="t1_1" placeholder="90">
+        <div class="card">
+            <h4>Холодная среда</h4>
+            <div class="row"><div class="col"><label>t1 (вход)</label><input type="number" id="t1" value="20"></div>
+            <div class="col"><label>t2 (выход)</label><input type="number" id="t2" value="49"></div></div>
         </div>
-        <div class="col">
-          <label>T2 (выход горячей, °C)</label>
-          <input type="number" id="t2_1" placeholder="60">
-        </div>
-        <div class="col">
-          <label>T3 (вход холодной, °C)</label>
-          <input type="number" id="t3_1" placeholder="30">
-        </div>
-        <div class="col">
-          <label>T4 (выход холодной, °C)</label>
-          <input type="number" id="t4_1" placeholder="50">
-        </div>
-      </div>
-      <button onclick="calculate(1)">Рассчитать LMTD</button>
-      <div class="result" id="result1"></div>
-      <canvas id="chart1"></canvas>
     </div>
-
-    <div class="block">
-      <h3>Режим 2</h3>
-      <div class="row">
-        <div class="col">
-          <label>Тип потока</label>
-          <select id="flowType2">
-            <option value="counter">Противоток</option>
+    <div style="display:flex; gap:10px; align-items:end;">
+        <select id="flowType" style="padding:8px; border-radius:4px;">
             <option value="parallel">Прямоток</option>
-          </select>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col">
-          <label>T1 (вход горячей, °C)</label>
-          <input type="number" id="t1_2" placeholder="85">
-        </div>
-        <div class="col">
-          <label>T2 (выход горячей, °C)</label>
-          <input type="number" id="t2_2" placeholder="55">
-        </div>
-        <div class="col">
-          <label>T3 (вход холодной, °C)</label>
-          <input type="number" id="t3_2" placeholder="35">
-        </div>
-        <div class="col">
-          <label>T4 (выход холодной, °C)</label>
-          <input type="number" id="t4_2" placeholder="55">
-        </div>
-      </div>
-      <button onclick="calculate(2)">Рассчитать LMTD</button>
-      <div class="result" id="result2"></div>
-      <canvas id="chart2"></canvas>
+            <option value="counter">Противоток</option>
+        </select>
+        <button onclick="calc()">Рассчитать LMTD и график</button>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-      function calculate(mode) {
-        const prefix = mode === 1 ? '1' : '2';
-        const t1 = parseFloat(document.getElementById('t1_' + prefix).value);
-        const t2 = parseFloat(document.getElementById('t2_' + prefix).value);
-        const t3 = parseFloat(document.getElementById('t3_' + prefix).value);
-        const t4 = parseFloat(document.getElementById('t4_' + prefix).value);
-        const flowType = document.getElementById('flowType' + prefix).value;
-        const resultEl = document.getElementById('result' + prefix);
-        const canvas = document.getElementById('chart' + prefix);
-
-        if (isNaN(t1) || isNaN(t2) || isNaN(t3) || isNaN(t4)) {
-          resultEl.textContent = 'Введите все значения';
-          return;
-        }
-
+    <div class="result" id="res">LMTD = ... °C</div>
+    <div class="chart-wrapper">
+        <canvas id="chart"></canvas>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let myChart = null;
+    function calc() {
+        const T1 = +document.getElementById('T1').value;
+        const T2 = +document.getElementById('T2').value;
+        const t1 = +document.getElementById('t1').value;
+        const t2 = +document.getElementById('t2').value;
+        const type = document.getElementById('flowType').value;
+        const elRes = document.getElementById('res');
+        
         let dT1, dT2;
-        if (flowType === 'counter') {
-          dT1 = t1 - t4;
-          dT2 = t2 - t3;
+        if (type === 'counter') {
+            dT1 = T1 - t2;
+            dT2 = T2 - t1;
         } else {
-          dT1 = t1 - t3;
-          dT2 = t2 - t4;
+            dT1 = T1 - t1;
+            dT2 = T2 - t2;
         }
-
+        
         if (dT1 <= 0 || dT2 <= 0) {
-          resultEl.textContent = 'Проверьте корректность температур (дельты должны быть > 0)';
-          return;
+            elRes.textContent = "Ошибка: ΔT ≤ 0";
+            elRes.style.borderLeftColor = "#dc3545";
+            return;
         }
-
-        let lmtd;
-        let method = '';
-
-        if (Math.abs(dT1 - dT2) < 0.0001) {
-          lmtd = dT1;
-          method = 'ΔT₁ ≈ ΔT₂, LMTD = ΔT';
-        } else if (dT1 / dT2 <= 2 || dT2 / dT1 <= 2) {
-          lmtd = (dT1 + dT2) / 2;
-          method = 'среднеарифметическое (ΔT₁/ΔT₂ ≤ 2)';
-        } else {
-          lmtd = (dT1 - dT2) / Math.log(dT1 / dT2);
-          method = 'точная формула';
-        }
-
-        resultEl.textContent = `LMTD = ${lmtd.toFixed(2)} °C (${flowType === 'counter' ? 'противоток' : 'прямоток'}, \${method})`;
-
-        drawChart(canvas, t1, t2, t3, t4, flowType);
-      }
-
-      function drawChart(canvas, t1, t2, t3, t4, flowType) {
-        const ctx = canvas.getContext('2d');
-
-        // Для стрелок используем аннотации — Chart.js не умеет рисовать стрелки на линиях,
-        // поэтому рисуем их вручную поверх графика
-        const drawArrow = (ctx, fromX, fromY, toX, toY, color, size = 10) => {
-          const angle = Math.atan2(toY - fromY, toX - fromX);
-          ctx.beginPath();
-          ctx.moveTo(fromX, fromY);
-          ctx.lineTo(toX, toY);
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 2;
-          ctx.stroke();
-
-          // Стрелка
-          const arrowLength = size;
-          const dx = Math.cos(angle - Math.PI / 6) * arrowLength;
-          const dy = Math.sin(angle - Math.PI / 6) * arrowLength;
-          const dx2 = Math.cos(angle + Math.PI / 6) * arrowLength;
-          const dy2 = Math.sin(angle + Math.PI / 6) * arrowLength;
-
-          ctx.beginPath();
-          ctx.moveTo(toX, toY);
-          ctx.lineTo(toX + dx, toY + dy);
-          ctx.lineTo(toX + dx2, toY + dy2);
-          ctx.fillStyle = color;
-          ctx.fill();
-        };
-
-        // Промежуточные точки для более точного отображения (линейная интерполяция)
-        const midHot = (t1 + t2) / 2;
-        const midCold = (t3 + t4) / 2;
-
-        let hotData, coldData;
-        if (flowType === 'counter') {
-          // Противоток: горячая — слева направо, холодная — справа налево
-          hotData = [t1, midHot, t2];
-          coldData = [t4, midCold, t3];
-        } else {
-          // Прямоток: обе слева направо
-          hotData = [t1, midHot, t2];
-          coldData = [t3, midCold, t4];
-        }
-
-        const chart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels: ['Вход', 'Середина', 'Выход'],
-            datasets: [
-              {
-                label: 'Горячая среда',
-                data: hotData,
-                borderColor: 'red',
-                tension: 0.4,
-                fill: false,
-                pointRadius: 4,
-                pointBackgroundColor: 'white',
-                pointBorderColor: 'red',
-                pointBorderWidth: 2
-              },
-              {
-                label: 'Холодная среда',
-                data: coldData,
-                borderColor: 'blue',
-                tension: 0.4,
-                fill: false,
-                pointRadius: 4,
-                pointBackgroundColor: 'white',
-                pointBorderColor: 'blue',
-                pointBorderWidth: 2
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: { beginAtZero: false, grid: { color: '#e0e0e0' } },
-              x: { grid: { display: false } }
+        
+        const lmtd = Math.abs(dT1 - dT2) < 0.001 ? dT1 : (dT1 - dT2) / Math.log(dT1 / dT2);
+        elRes.textContent = "LMTD = " + lmtd.toFixed(2) + " °C";
+        elRes.style.borderLeftColor = "#007bff";
+        
+        // Данные для графика
+        const hot = [T1, T2];
+        const cold = type === 'counter' ? [t2, t1] : [t1, t2];
+        // Убраны подписи "Вход" и "Выход" — теперь оси без текстовых меток
+        const labels = ['', '']; 
+        
+        const ctx = document.getElementById('chart').getContext('2d');
+        if (myChart) myChart.destroy();
+        
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Горячая среда', data: hot, borderColor: '#dc3545', fill: false, tension: 0.3, pointRadius: 5 },
+                    { label: 'Холодная среда', data: cold, borderColor: '#0d6efd', fill: false, tension: 0.3, pointRadius: 5 }
+                ]
             },
-            plugins: {
-              legend: { position: 'top' },
-              tooltip: { mode: 'index', intersect: false }
-            },
-            onComplete: function() {
-              // Рисуем стрелки поверх графика
-              const width = canvas.width;
-              const height = canvas.height;
-              const xScale = this.scales['x'];
-              const yScale = this.scales['y'];
-
-              const getX = (label) => xScale.getPixelForValue(label);
-              const getY = (value) => yScale.getPixelForValue(value);
-
-              // Стрелки для горячей среды
-              const hStartX = getX('Вход');
-              const hStartY = getY(hotData);
-              const hEndX = getX('Выход');
-              const hEndY = getY(hotData);
-              drawArrow(ctx, hStartX, hStartY, hEndX, hEndY, 'red', 12);
-
-              // Стрелки для холодной среды
-              const cStartX = getX('Вход');
-              const cStartY = getY(coldData);
-              const cEndX = getX('Выход');
-              const cEndY = getY(coldData);
-              drawArrow(ctx, cStartX, cStartY, cEndX, cEndY, 'blue', 12);
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: { 
+                    x: { 
+                        grid: { display: false },
+                        ticks: { display: false } // Полностью скрываем подписи оси X
+                    },
+                    y: { beginAtZero: false, min: 0 } 
+                }
             }
-          }
         });
-      }
-    </script>
-  </body>
+    }
+    window.onload = calc;
+</script>
+</body>
 </html>
